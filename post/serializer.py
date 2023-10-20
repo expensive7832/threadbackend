@@ -38,17 +38,20 @@ class GetPostSerializer(serializers.ModelSerializer):
 
 class createPostSerializer(serializers.Serializer):
     img_list = serializers.ListField(
-         child=serializers.ImageField(),
-         allow_empty= True,
-         read_only=True
+        child=serializers.ImageField(),
+        allow_empty = True,
+        required=False,
+        min_length = 0,
+        max_length = 3
     )
 
     userId = serializers.CharField()
-    body = serializers.CharField()
+    body = serializers.CharField(default="")
 
         
 
     def create(self, data):
+        
         userId = data['userId']
         body = data['body']
 
@@ -66,16 +69,21 @@ class createPostSerializer(serializers.Serializer):
             else:
                 newpost = Post.objects.create(userId = user,body = body)
 
-                img_list = data['img_list']
+                img_list = data.get('img_list')
 
                 
+                if img_list is not None:
 
-                for img in img_list:
-                    result = cloudinary.uploader.upload(img)
-                    
-                    PostImage.objects.create( postid = newpost,img = result['secure_url'], img_id = result['public_id'])
 
-                return data
+                    for img in img_list:
+                        result = cloudinary.uploader.upload(img)
+                        print(result)
+                        PostImage.objects.create( postid = newpost,img = result['secure_url'], img_id = result['public_id'])
+
+                        return data
+                else:
+
+                    return data
 
         except BaseException as e:
             raise ValueError(str(e))
